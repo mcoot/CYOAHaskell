@@ -50,6 +50,9 @@ pLine = Left . Line
 
 data VariablePrompt = VariablePrompt { varPromptLine :: Line, varPromptVariable :: String, varPromptType :: VariableType } deriving (Eq)
 
+pVarPrompt :: String -> String -> VariableType -> PageElement
+pVarPrompt dispLine varName varType = Right $ VariablePrompt (Line dispLine) varName varType
+
 renderVarsText :: VariableMap -> String -> String
 renderVarsText varMap text = text
     

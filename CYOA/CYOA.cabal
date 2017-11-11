@@ -17,6 +17,8 @@ library
   hs-source-dirs:      src
   exposed-modules:     StoryData, Lib, ConsoleExecution, TestStory
   build-depends:       base >= 4.7 && < 5
+                     , containers
+                     , mtl
   default-language:    Haskell2010
 
 executable CYOA-exe

@@ -1,9 +1,34 @@
 module ConsoleExecution (playStory) where
 
+import Control.Monad.State
 import System.IO
+import qualified Text.Read (readMaybe)
 
 import StoryData
 import Lib
+
+------------------------
+-- Basic IO with StateT context
+------------------------
+
+-- | Print a string to the console
+sPrintLn :: String -> StateT VariableMap IO ()
+sPrintLn = lift . putStrLn
+
+-- | Get a string line from the user
+sGetLn :: StateT VariableMap IO String
+sGetLn = lift $ getLine
+
+-- | Wait for an enter press, not echoing and ignoring stdin
+sGetEnterPress :: StateT VariableMap IO ()
+sGetEnterPress = do
+    lift $ hSetEcho stdin False
+    _ <- lift $ getLine
+    lift $ hSetEcho stdin True
+
+------------------------
+-- Story Execution
+------------------------
 
 -- | Pretty-print a string to the screen as a title
 printTitle :: String -> IO ()
@@ -12,27 +37,52 @@ printTitle title = do
     putStrLn $ "| " ++ title ++ " |"
     putStrLn $ duplicate "-" $ length title + 4
 
--- | Display text one line at a time, waiting for an Enter press between lines
-displayText :: [String] -> IO ()
-displayText [] = return ()
-displayText (x:xs) = do
-    putStrLn x
-    -- Turn echo off so that text entered isn't shown
-    -- and also so there isn't a blank line between each item
-    hSetEcho stdin False
-    _ <- getLine
-    hSetEcho stdin True
-    displayText xs
+displayTextLine :: Line -> StateT VariableMap IO ()
+displayTextLine (Line text) = do
+    m <- get
+    sPrintLn $ renderVarsText m text
+    sGetEnterPress
+
+promptForVariable :: VariableType -> String -> StateT VariableMap IO ()
+promptForVariable varType varName = do
+    response <- sGetLn
+    case varType of
+        StringVariable  -> putVariable varName (StringElement response)
+        IntVariable     -> case Text.Read.readMaybe response of
+                                Just x   -> putVariable varName (IntElement x)
+                                Nothing  -> promptForVariable varType varName
+        DoubleVariable  -> case Text.Read.readMaybe response of
+                                Just x   -> putVariable varName (DoubleElement x)
+                                Nothing  -> promptForVariable varType varName
+
+displayVariablePrompt :: VariablePrompt -> StateT VariableMap IO ()
+displayVariablePrompt (VariablePrompt {varPromptLine = line, 
+                                       varPromptVariable = varName,
+                                       varPromptType = varType})
+    = do
+        m <- get
+        sPrintLn $ renderVarsText m (lineText line)
+        promptForVariable varType varName
+
+-- | Display the elements of a page one line at a time
+displayPageContents :: [PageElement] -> StateT VariableMap IO ()
+displayPageContents [] = return ()
+displayPageContents (x:xs) = do
+    case x of
+        Left line -> displayTextLine line
+        Right prompt -> displayVariablePrompt prompt
+    displayPageContents xs
 
 -- | Helper function for printing a list of choices
-printChoicesLoop :: [Choice] -> Integer -> IO ()
+printChoicesLoop :: [Choice] -> Integer -> StateT VariableMap IO ()
 printChoicesLoop [] _ = return ()
 printChoicesLoop (x:xs) i = do
-    putStrLn $ (show i) ++ ") " ++ choiceLabel x
+    m <- get
+    sPrintLn $ (show i) ++ ") " ++  (renderVarsText m $ lineText $ choiceLabel x)
     printChoicesLoop xs (i + 1)
 
 -- | Print a list of choices
-printChoices :: [Choice] -> IO ()
+printChoices :: [Choice] -> StateT VariableMap IO ()
 printChoices choices = printChoicesLoop choices 1
 
 -- | Wait for a valid input of a number from 1 to the number of choices, 
@@ -50,19 +100,20 @@ getUserChoice choices = do
                 return $ choices !! (index - 1)
 
 -- | Present a question with a list of possible responses, and get a response input
-presentChoice :: String -> [Choice] -> IO Choice
+presentChoice :: Line -> [Choice] -> StateT VariableMap IO Choice
 presentChoice question choices = do
-    putStrLn question
+    m <- get
+    sPrintLn $ renderVarsText m $ lineText question
     printChoices choices
     -- Get an answer
-    getUserChoice choices
+    lift $ getUserChoice choices
 
 -- | Execute a story page, printing the story line-by-line
 --   If the page ends in a Choice, the choice is prompted and the page the user's choice leads to is returned
 --   If the page ends with an Ending, this is returned
-runPage :: Page -> IO (Either Page Ending)
+runPage :: Page -> StateT VariableMap IO (Either Page Ending)
 runPage page = do
-    displayText $ pageText page
+    displayPageContents $ pageContents page
     case pageResult page of
         EndPoint ending -> do
             return $ Right ending
@@ -72,7 +123,7 @@ runPage page = do
 
 -- | Run a page, and then the follow on page, until eventually an ending is reached
 --   i.e. traverse the story tree with user input guiding the choices
-runPageTraversal :: Page -> IO Ending
+runPageTraversal :: Page -> StateT VariableMap IO Ending
 runPageTraversal page = do
     nextResult <- runPage page
     case nextResult of
@@ -83,6 +134,8 @@ runPageTraversal page = do
 playStory :: Story -> IO ()
 playStory story = do
     printTitle $ storyTitle story
-    ending <- runPageTraversal $ startPage story
-    putStrLn $ getEndingText ending
+    result <- runStateT (runPageTraversal $ startPage story) emptyVariableMap
+    putStrLn $ lineText $ endingLine $ fst result
     putStrLn "[END]"
+
+-- playStory = undefined

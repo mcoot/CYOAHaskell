@@ -1,5 +1,6 @@
 module TestStory (testStory) where
 
+import VariableData
 import StoryData
 
 -- | A story with some test content, to test the story execution

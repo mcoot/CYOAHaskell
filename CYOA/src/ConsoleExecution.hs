@@ -4,6 +4,7 @@ import Control.Monad.State
 import System.IO
 import qualified Text.Read (readMaybe)
 
+import VariableData
 import StoryData
 import Lib
 

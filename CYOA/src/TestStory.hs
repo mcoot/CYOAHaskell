@@ -16,10 +16,10 @@ testStory = Story {
             pLine "...",
             pLine "You wake up.",
             pLine "You remember your identity.",
-            pLine "You are a fish, and your name is Frederick.",
+            pLine "You are a fish, and your name is $name.",
             pLine "Precisely how you are thinking this is a great mystery, as fish are not normally sapient.",
             pLine "Chalk that one up to the mysteries of the universe, I guess.",
-            pLine "Nonetheless, you are a sapient fish and your name is Frederick.",
+            pLine "Nonetheless, you are a sapient fish and your name is $name.",
             pLine "You live on land, and for all intents and purposes your life is that of a regular human. Nobody suspects anything.",
             pLine "You decide to use your sapience and the free will (or illusion thereof) it grants you to make a Meaningful Choice"
             ],
@@ -47,7 +47,7 @@ testStory = Story {
                                         pageContents = [
                                             pLine "You (correctly) realise that shipping containers falling from the sky is not an ordinary occurrence.",
                                             pLine "You then (correctly) realise that the proper response to your house being crushed by a large object is unrestrained panic.",
-                                            pLine "You attempt to bolt out of your house through the portion of your front doorway which is still intact.",
+                                            pLine "You bolt out of your house through the portion of your front doorway which is still intact.",
                                             pLine "Unfortunately in your panic you do not register the steel beam sticking partway out of the doorway",
                                             pLine "The steel is sharp and slices you open.",
                                             pLine "The wound is horrific, and you bleed out on your front lawn.",

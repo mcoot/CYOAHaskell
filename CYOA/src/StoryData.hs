@@ -1,5 +1,7 @@
 module StoryData where 
 
+import Text.Regex.Posix
+import Data.String.Utils
 import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -53,8 +55,22 @@ data VariablePrompt = VariablePrompt { varPromptLine :: Line, varPromptVariable 
 pVarPrompt :: String -> String -> VariableType -> PageElement
 pVarPrompt dispLine varName varType = Right $ VariablePrompt (Line dispLine) varName varType
 
+getVarsTextVariables :: String -> [String]
+getVarsTextVariables str = getAllTextMatches (str =~ "\\$[A-Za-z0-9]+" :: AllTextMatches [] String)
+
+getVarsTextReplacements :: VariableMap -> [String] -> [(String, String)]
+getVarsTextReplacements _ [] = []
+getVarsTextReplacements m (v:vs)
+    = curElement ++ (getVarsTextReplacements m vs)
+    where curElement = case getVariableMaybe (drop 1 v) m of
+                            Just val -> [(v, renderVariableElement val)]
+                            Nothing -> []
+
+replaceVarInText :: (String, String) -> String -> String
+replaceVarInText (s, r) t = replace s r t
+
 renderVarsText :: VariableMap -> String -> String
-renderVarsText varMap text = text
+renderVarsText varMap text = foldr replaceVarInText text (getVarsTextReplacements varMap $ getVarsTextVariables text)
     
 -- | Type alias for a variable mapping
 type VariableMap = Map String VariableElement
@@ -65,6 +81,9 @@ emptyVariableMap = Map.empty
 -- | Get a variable from the map, with a default value
 getVariable :: String -> VariableElement -> VariableMap -> VariableElement
 getVariable k d m = Map.findWithDefault d k m
+
+getVariableMaybe :: String -> VariableMap -> Maybe VariableElement
+getVariableMaybe = Map.lookup
 
 -- | Put a variable in the map
 putVariable :: String -> VariableElement -> StateT VariableMap IO ()
@@ -98,6 +117,6 @@ data VariableElement = IntElement Integer
 
 renderVariableElement :: VariableElement -> String
 renderVariableElement (IntElement val) = show val
-renderVariableElement (StringElement val) = show val
+renderVariableElement (StringElement val) = val
 renderVariableElement (DoubleElement val) = show val
     

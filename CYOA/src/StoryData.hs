@@ -4,7 +4,7 @@ import VariableData
 
 ------------------------
 -- Story tree structure
--------------------------
+------------------------
 
 -- | Representation of a complete CYOA story
 data Story = Story {

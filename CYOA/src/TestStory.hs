@@ -19,7 +19,7 @@ testStory = Story {
             pLine "You are a fish, and your name is $name.",
             pLine "Precisely how you are thinking this is a great mystery, as fish are not normally sapient.",
             pLine "Chalk that one up to the mysteries of the universe, I guess.",
-            pLine "Nonetheless, you are a sapient fish and your name is $name.",
+            pLine "Nonetheless, you are a sapient fish and your name is ${name}.",
             pLine "You live on land, and for all intents and purposes your life is that of a regular human. Nobody suspects anything.",
             pLine "You decide to use your sapience and the free will (or illusion thereof) it grants you to make a Meaningful Choice"
             ],

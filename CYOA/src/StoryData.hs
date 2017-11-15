@@ -1,5 +1,6 @@
 module StoryData where 
 
+import Data.List
 import Text.Regex.Posix
 import Data.String.Utils
 import Control.Monad.State
@@ -55,22 +56,31 @@ data VariablePrompt = VariablePrompt { varPromptLine :: Line, varPromptVariable 
 pVarPrompt :: String -> String -> VariableType -> PageElement
 pVarPrompt dispLine varName varType = Right $ VariablePrompt (Line dispLine) varName varType
 
-getVarsTextVariables :: String -> [String]
-getVarsTextVariables str = getAllTextMatches (str =~ "\\$[A-Za-z0-9]+" :: AllTextMatches [] String)
+getMatches :: String -> String -> [String]
+getMatches str pattern = getAllTextMatches (str =~ pattern :: AllTextMatches [] String)
 
-getVarsTextReplacements :: VariableMap -> [String] -> [(String, String)]
-getVarsTextReplacements _ [] = []
-getVarsTextReplacements m (v:vs)
-    = curElement ++ (getVarsTextReplacements m vs)
-    where curElement = case getVariableMaybe (drop 1 v) m of
+getVarsTextVariablesBracketed :: String -> [String]
+getVarsTextVariablesBracketed str = map (init . drop 2) (getMatches str "\\${[A-Za-z0-9]+}")
+
+getVarsTextVariablesUnbracketed :: String -> [String]
+getVarsTextVariablesUnbracketed str = map (drop 1)  (getMatches str "\\$[A-Za-z0-9]+")
+
+getVarsTextVariables :: String -> [String]
+getVarsTextVariables str = nub $ (getVarsTextVariablesUnbracketed str) ++ (getVarsTextVariablesBracketed str)
+
+getVarValues :: VariableMap -> [String] -> [(String, String)]
+getVarValues _ [] = []
+getVarValues m (v:vs)
+    = curElement ++ (getVarValues m vs)
+    where curElement = case getVariableMaybe v m of
                             Just val -> [(v, renderVariableElement val)]
                             Nothing -> []
 
 replaceVarInText :: (String, String) -> String -> String
-replaceVarInText (s, r) t = replace s r t
+replaceVarInText (s, r) t = replace ("${" ++ s ++ "}") r $ replace ("$" ++ s) r t
 
 renderVarsText :: VariableMap -> String -> String
-renderVarsText varMap text = foldr replaceVarInText text (getVarsTextReplacements varMap $ getVarsTextVariables text)
+renderVarsText varMap text = foldr replaceVarInText text (getVarValues varMap $ getVarsTextVariables text)
     
 -- | Type alias for a variable mapping
 type VariableMap = Map String VariableElement

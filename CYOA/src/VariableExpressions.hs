@@ -1,4 +1,6 @@
-module VariableExpressions (evalExprInt, evalExprDouble) where
+module VariableExpressions (evalRealExpr, evalPredExpr) where
+
+import Data.Fixed (mod')
 
 import Text.Parsec
 import Text.Parsec.String (Parser)
@@ -6,13 +8,19 @@ import Text.Parsec.Language (emptyDef)
 import Text.Parsec.Expr
 import Text.Parsec.Token
 
+import Lib
 import VariableData
 
-evalExprInt :: String -> Integer
-evalExprInt str = undefined
-
-evalExprDouble :: String -> Double
-evalExprDouble str = undefined
+evalRealExpr :: VariableMap -> String -> Maybe Double
+evalRealExpr m str = do
+    parseRes <- parseRealExprMaybe str
+    evalRealExprAST m parseRes
+    
+    
+evalPredExpr :: VariableMap -> String -> Maybe Bool
+evalPredExpr m str = do
+    parseRes <- parsePredExprMaybe str
+    evalPredExprAST m parseRes   
 
 ------------------------
 -- Boolean-valued predicate expressions
@@ -85,6 +93,41 @@ parsePredExpr = do
     eof
     return e
 
+parsePredExprMaybe :: String -> Maybe PredExpr
+parsePredExprMaybe str = case parse parsePredExpr "" str of
+                            Left _      -> Nothing
+                            Right ex    -> Just ex
+
+-- Evaluation
+
+evalPredExprAST :: VariableMap -> PredExpr -> Maybe Bool
+evalPredExprAST _ (BoolConst b) = return b
+
+evalPredExprAST m (RBinaryExpr op lEx rEx) = do
+    lVal <- evalRealExprAST m lEx
+    rVal <- evalRealExprAST m rEx
+    case op of
+        RealLessThan -> return $ lVal < rVal
+        RealLessThanEq -> return $ lVal <= rVal
+        RealEquals -> return $ lVal == rVal
+        RealNotEquals -> return $ lVal /= rVal
+        RealGreaterThanEq -> return $ lVal >= rVal
+        RealGreaterThan -> return $ lVal > rVal
+
+evalPredExprAST m (PUnaryExpr PredNot ex) = do
+    exres <- evalPredExprAST m ex
+    return $ not exres
+
+evalPredExprAST m (PBinaryExpr op lEx rEx) = do
+    lVal <- evalPredExprAST m lEx
+    rVal <- evalPredExprAST m rEx
+    case op of
+        PredAnd -> return (lVal && rVal)
+        PredOr -> return (lVal || rVal)
+        PredXor -> return (lVal `xor` rVal)
+        PredImplies -> return (lVal `implies` rVal)
+        PredIff -> return (lVal `iff` rVal)
+        
 ------------------------
 -- Numeric real-valued expressions
 ------------------------
@@ -140,29 +183,35 @@ parseRealExpr = do
     eof
     return e
 
+parseRealExprMaybe :: String -> Maybe RealExpr
+parseRealExprMaybe str = case parse parseRealExpr "" str of
+                            Left _      -> Nothing
+                            Right expr  -> Just expr
+
 -- Evaluation
 
-evalRealExpr :: VariableMap -> RealExpr -> Maybe Double
-evalRealExpr _ (IntConst i) = Just $ fromIntegral i
-evalRealExpr _ (DoubleConst f) = Just f
-evalRealExpr m (VarConst varName) = case getVariableMaybe varName m of
-                                        Just (IntElement i)     -> evalRealExpr m (IntConst i)
-                                        Just (DoubleElement f)  -> evalRealExpr m (DoubleConst f)
+evalRealExprAST :: VariableMap -> RealExpr -> Maybe Double
+evalRealExprAST _ (IntConst i) = return $ fromIntegral i
+evalRealExprAST _ (DoubleConst f) = return f
+evalRealExprAST m (VarConst varName) = case getVariableMaybe varName m of
+                                        Just (IntElement i)     -> evalRealExprAST m (IntConst i)
+                                        Just (DoubleElement f)  -> evalRealExprAST m (DoubleConst f)
                                         Just (StringElement _)  -> Nothing 
                                         Nothing -> Nothing
 
-evalRealExpr m (UnaryExpr RealPositive ex) = evalRealExpr m ex
-evalRealExpr m (UnaryExpr RealNegation ex) = do
-    exres <- evalRealExpr m ex
+evalRealExprAST m (UnaryExpr RealPositive ex) = evalRealExprAST m ex
+evalRealExprAST m (UnaryExpr RealNegation ex) = do
+    exres <- evalRealExprAST m ex
     return $ 0 - exres
 
-evalRealExpr m (BinaryExpr op lEx rEx) = do
-    lVal <- evalRealExpr m lEx
-    rVal <- evalRealExpr m rEx
+evalRealExprAST m (BinaryExpr op lEx rEx) = do
+    lVal <- evalRealExprAST m lEx
+    rVal <- evalRealExprAST m rEx
     case op of
         RealAdd         -> return $ lVal + rVal
         RealSubtract    -> return $ lVal - rVal
         RealTimes       -> return $ lVal * rVal
         RealDivide      -> if rVal == 0 then Nothing else (return $ lVal / rVal)
-        RealModulo      -> undefined
+        RealModulo      -> return $ mod' lVal rVal
         RealExponent    -> return $ lVal ** rVal
+

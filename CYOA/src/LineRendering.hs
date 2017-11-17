@@ -61,7 +61,7 @@ getExprValues _ [] = []
 getExprValues m (ex:exs) = curElement ++ (getExprValues m exs)
         where curElement = case evalRealExpr m ex of
                                 Just val -> [(ex, renderRealResult val)]
-                                Nothing  -> []
+                                Nothing  -> [(ex, "#VAL?")]
 
 replaceExprInText :: (String, String) -> String -> String
 replaceExprInText (s, r) t = replace ("`" ++ s ++ "`") r t

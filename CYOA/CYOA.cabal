@@ -21,7 +21,7 @@ library
                      , mtl
                      , parsec
                      , split
-                     , regex-posix
+                     , regex-pcre-builtin
                      , MissingH
   default-language:    Haskell2010
 

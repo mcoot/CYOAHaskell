@@ -5,6 +5,7 @@ import System.IO
 import qualified Text.Read (readMaybe)
 
 import VariableData
+import LineRendering
 import StoryData
 import Lib
 

@@ -16,11 +16,24 @@ evalRealExpr m str = do
     parseRes <- parseRealExprMaybe str
     evalRealExprAST m parseRes
     
-    
+evalRealExprUnsafe :: VariableMap -> String -> Double
+evalRealExprUnsafe m str = case parseRealExprMaybe str of
+                            Just parseRes -> case evalRealExprAST m parseRes of
+                                                Just realRes -> realRes
+                                                Nothing      -> error "Failed to evaluate real expression"
+                            Nothing       -> error "Failed to parse real expression"
+
 evalPredExpr :: VariableMap -> String -> Maybe Bool
 evalPredExpr m str = do
     parseRes <- parsePredExprMaybe str
     evalPredExprAST m parseRes   
+
+evalPredExprUnsafe :: VariableMap -> String -> Bool
+evalPredExprUnsafe m str = case parsePredExprMaybe str of
+                            Just parseRes -> case evalPredExprAST m parseRes of
+                                                Just predRes -> predRes
+                                                Nothing      -> error "Failed to evaluate predicate expression"
+                            Nothing       -> error "Failed to parse predicate expression"
 
 ------------------------
 -- Boolean-valued predicate expressions

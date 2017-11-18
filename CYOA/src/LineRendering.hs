@@ -10,7 +10,11 @@ import VariableExpressions
 
 -- | Render variables and expression literals into a string
 renderVarsText :: VariableMap -> String -> String
-renderVarsText varMap = (replaceExpressionsInText varMap) . (replaceVarsInText varMap) 
+renderVarsText varMap = (replacePredTernariesInText varMap) . (replaceExpressionsInText varMap) . (replaceVarsInText varMap) 
+
+-- | Get all regex matches, with captures for each, from a given string and pattern
+getMatches :: String -> String -> [[String]]
+getMatches str pattern = str =~ pattern :: [[String]]
 
 ------------------------
 -- Render variables in text
@@ -21,14 +25,11 @@ renderVariableElement (IntElement val) = show val
 renderVariableElement (StringElement val) = val
 renderVariableElement (DoubleElement val) = show val
 
-getMatches :: String -> String -> [String]
-getMatches str pattern = getAllTextMatches (str =~ pattern :: AllTextMatches [] String)
-
 getVarsTextVariablesBracketed :: String -> [String]
-getVarsTextVariablesBracketed str = map (init . drop 2) (getMatches str "\\${[A-Za-z0-9]+}")
+getVarsTextVariablesBracketed str = map (flip (!!) 1) (getMatches str "\\${([A-Za-z0-9]+)}")
 
 getVarsTextVariablesUnbracketed :: String -> [String]
-getVarsTextVariablesUnbracketed str = map (drop 1)  (getMatches str "\\$[A-Za-z0-9]+")
+getVarsTextVariablesUnbracketed str = map (flip (!!) 1)  (getMatches str "\\$([A-Za-z0-9]+)")
 
 getVarsTextVariables :: String -> [String]
 getVarsTextVariables str = nub $ (getVarsTextVariablesUnbracketed str) ++ (getVarsTextVariablesBracketed str)
@@ -54,7 +55,7 @@ renderRealResult :: Double -> String
 renderRealResult x = if isInt x then show $ fromIntegral $ round x else show x
 
 getExprLiteralsInText :: String -> [String]
-getExprLiteralsInText str = map (init . drop 1) (getMatches str "`(.*?)`")
+getExprLiteralsInText str = map (flip (!!) 1) (getMatches str "`(.*?)`")
 
 getExprValues :: VariableMap -> [String] -> [(String, String)]
 getExprValues _ [] = []
@@ -68,3 +69,25 @@ replaceExprInText (s, r) t = replace ("`" ++ s ++ "`") r t
 
 replaceExpressionsInText :: VariableMap -> String -> String
 replaceExpressionsInText varMap str = foldr replaceExprInText str (getExprValues varMap $ getExprLiteralsInText str)
+
+------------------------
+-- Render predicate ternary expressions in text (of the form ::? pred ? trueCase : falseCase ?::)
+------------------------
+
+data PredTernaryLiteral = PredTernaryLiteral {ternaryQuery :: String, ternaryTrueCase :: String, ternaryFalseCase :: String} deriving Show
+
+getPredTernariesInText :: String -> [(String, PredTernaryLiteral)]
+getPredTernariesInText str = map (\(s:q:t:f:_) -> (s, PredTernaryLiteral q t f)) (getMatches str "::\\?(.*?)\\?(.*?):(.*?)\\?::")
+
+getPredTernaryValues :: VariableMap -> [(String, PredTernaryLiteral)] -> [(String, String)]
+getPredTernaryValues _ [] = []
+getPredTernaryValues m (p:ps) = curElement ++ (getPredTernaryValues m ps)
+        where curElement = case evalPredExpr m (ternaryQuery $ snd p) of
+                                Just b  -> [(fst p, if b then (ternaryTrueCase $ snd p) else (ternaryFalseCase $ snd p))]
+                                Nothing -> [(fst p, "#PRED?")]
+
+replacePredTernInText :: (String, String) -> String -> String
+replacePredTernInText (s, r) t = replace s r t
+
+replacePredTernariesInText :: VariableMap -> String -> String
+replacePredTernariesInText varMap str = foldr replacePredTernInText str (getPredTernaryValues varMap $ getPredTernariesInText str)

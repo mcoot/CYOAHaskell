@@ -9,7 +9,7 @@ testStory = Story {
     storyTitle = "Test Story", 
     startPage = Page {
         pageContents = [
-            pLine "A couple of quick questions before we begin:",
+            pLine "A couple of quick questions about ::? 5 < 2 ? birds : llamas ?:: before we begin:",
             pVarPrompt "What is your name?" "name" StringVariable,
             pVarPrompt "What is your favourite integer?" "faveInt" IntVariable,
             pVarPrompt "What is five divided by two?" "fiveDivTwo" DoubleVariable,

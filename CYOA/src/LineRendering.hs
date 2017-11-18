@@ -77,7 +77,7 @@ replaceExpressionsInText varMap str = foldr replaceExprInText str (getExprValues
 data PredTernaryLiteral = PredTernaryLiteral {ternaryQuery :: String, ternaryTrueCase :: String, ternaryFalseCase :: String} deriving Show
 
 getPredTernariesInText :: String -> [(String, PredTernaryLiteral)]
-getPredTernariesInText str = map (\(s:q:t:f:_) -> (s, PredTernaryLiteral q t f)) (getMatches str "::\\?(.*?)\\?(.*?):(.*?)\\?::")
+getPredTernariesInText str = map (\(s:q:t:f:_) -> (s, PredTernaryLiteral (strip q) (strip t) (strip f))) (getMatches str "::\\?(.*?)\\?(.*?):(.*?)\\?::")
 
 getPredTernaryValues :: VariableMap -> [(String, PredTernaryLiteral)] -> [(String, String)]
 getPredTernaryValues _ [] = []

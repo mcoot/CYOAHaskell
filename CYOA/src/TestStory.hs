@@ -1,12 +1,46 @@
-module TestStory (testStory) where
+module TestStory where
 
 import VariableData
 import StoryData
 
+branchTestStory :: Story
+branchTestStory = Story {
+    storyTitle = "Conditional Branching Test Story",
+    startPage = Page {
+        pageContents = [
+            pLine "Hey there qt`314/100`, just testing atm",
+            pVarPrompt "Quick Q, what's five divided by two?" "fiveDivTwo" DoubleVariable,
+            pLine "Ok, thanks",
+            pLine "No dramas, just need to check if you were telling the truth or whether you're a filthy liar (hint: ::? fiveDivTwo == 2.5 ? ur sweet : get ready `1+1` b r`9/3`kt bro ?::)",
+            pLine "Checking now... "
+        ],
+        pageResult = Conditional {
+            condFalseLine = Line "Ok yep, five divided by two is $fiveDivTwo apparently, that's normal",
+            condTrueLine = Line "Ah right, thanks for confirming. I forgot how `(4/4) * 2` maths apparently",
+            condBranch = Branch {
+                branchPred = "fiveDivTwo == 2.5",
+                branchFalsePage = Page {
+                    pageContents = [
+                        pLine "Oh who am I kidding this is totally not normal at all. CLEARLY five divided by two is `5/2`.",
+                        pLine "You're a filthy liar and you need to be punished."
+                    ],
+                    pageResult = EndPoint $ Ending $ Line "You ded rip"
+                },
+                branchTruePage = Page {
+                    pageContents = [
+                        pLine "Nah I didn't forget I was just testing bro. You never know who you can trust in this world."
+                    ],
+                    pageResult = EndPoint $ Ending $ Line "Everything is OK in the world"
+                }
+            }
+        }
+    }
+}
+
 -- | A story with some test content, to test the story execution
-testStory :: Story
-testStory = Story {
-    storyTitle = "Test Story", 
+testStoryOld1 :: Story
+testStoryOld1 = Story {
+    storyTitle = "Test Story [Old 1]", 
     startPage = Page {
         pageContents = [
             pLine "A couple of quick questions about ::? 5 < 2 ? birds : llamas ?:: before we begin:",

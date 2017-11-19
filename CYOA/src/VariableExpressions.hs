@@ -1,4 +1,4 @@
-module VariableExpressions (evalRealExpr, evalPredExpr) where
+module VariableExpressions (evalRealExpr, evalPredExpr, evalRealExprUnsafe, evalPredExprUnsafe) where
 
 import Data.Fixed (mod')
 

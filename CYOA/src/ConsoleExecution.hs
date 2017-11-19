@@ -5,6 +5,7 @@ import System.IO
 import qualified Text.Read (readMaybe)
 
 import VariableData
+import VariableExpressions
 import LineRendering
 import StoryData
 import Lib
@@ -110,6 +111,17 @@ presentChoice question choices = do
     -- Get an answer
     lift $ getUserChoice choices
 
+-- | Get the page to move to from a branch condition; defaults to false if predicate evaluation fails
+presentBranch :: Branch -> Line -> Line -> StateT VariableMap IO Page
+presentBranch br tl fl = do
+    m <- get
+    case evalPredExpr m (branchPred br) of
+        Just b -> if b then
+                    (displayTextLine tl) >> (return $ branchTruePage br )
+                  else
+                    (displayTextLine fl) >> (return $ branchFalsePage br)
+        Nothing -> (displayTextLine fl) >> (return $ branchFalsePage br)
+
 -- | Execute a story page, printing the story line-by-line
 --   If the page ends in a Choice, the choice is prompted and the page the user's choice leads to is returned
 --   If the page ends with an Ending, this is returned
@@ -122,6 +134,9 @@ runPage page = do
         Choices {choiceQuestion = question, choiceOptions = options} -> do
             userChoice <- presentChoice question options
             return $ Left $ nextPage userChoice
+        Conditional {condBranch = br, condTrueLine = tl, condFalseLine = fl} -> do
+            condPage <- presentBranch br tl fl
+            return $ Left $ condPage
 
 -- | Run a page, and then the follow on page, until eventually an ending is reached
 --   i.e. traverse the story tree with user input guiding the choices

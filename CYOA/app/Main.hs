@@ -5,4 +5,4 @@ import ConsoleExecution
 import TestStory
 
 main :: IO ()
-main = playStory testStory
+main = playStory branchTestStory

@@ -9,19 +9,20 @@ branchTestStory = Story {
     startPage = Page {
         pageContents = [
             pLine "Hey there qt`314/100`, just testing atm",
+            pVarAssign "realFiveDivTwo" "5/2" DoubleVariable,
             pVarPrompt "Quick Q, what's five divided by two?" "fiveDivTwo" DoubleVariable,
             pLine "Ok, thanks",
-            pLine "No dramas, just need to check if you were telling the truth or whether you're a filthy liar (hint: ::? fiveDivTwo == 2.5 ? ur sweet : get ready `1+1` b r`9/3`kt bro ?::)",
+            pLine "No dramas, just need to check if you were telling the truth or whether you're a filthy liar (hint: ::? fiveDivTwo == realFiveDivTwo ? ur sweet : get ready `1+1` b r`9/3`kt bro ?::)",
             pLine "Checking now... "
         ],
         pageResult = Conditional {
             condFalseLine = Line "Ok yep, five divided by two is $fiveDivTwo apparently, that's normal",
             condTrueLine = Line "Ah right, thanks for confirming. I forgot how `(4/4) * 2` maths apparently",
             condBranch = Branch {
-                branchPred = "fiveDivTwo == 2.5",
+                branchPred = "fiveDivTwo == realFiveDivTwo",
                 branchFalsePage = Page {
                     pageContents = [
-                        pLine "Oh who am I kidding this is totally not normal at all. CLEARLY five divided by two is `5/2`.",
+                        pLine "Oh who am I kidding this is totally not normal at all. CLEARLY five divided by two is ${realFiveDivTwo}.",
                         pLine "You're a filthy liar and you need to be punished."
                     ],
                     pageResult = EndPoint $ Ending $ Line "You ded rip"

@@ -67,13 +67,29 @@ displayVariablePrompt (VariablePrompt {varPromptLine = line,
         sPrintLn $ renderVarsText m (lineText line)
         promptForVariable varType varName
 
+performVariableAssignment :: (VariableMap -> String -> Maybe a) -> (a -> VariableElement) -> VariableAssignment -> StateT VariableMap IO ()
+performVariableAssignment evalFn constructorFn va = do
+    m <- get
+    let realRes = evalFn m (varAssignValueExpr va)
+    case realRes of
+        Just r  -> putVariable (varAssignVariable va) (constructorFn r)
+        Nothing -> sPrintLn $ "[Evaluation of `" ++ varAssignValueExpr va ++ "` in variable assignment failed]"  
+
+executeVariableAssignment :: VariableAssignment -> StateT VariableMap IO ()
+executeVariableAssignment va = case varAssignType va of
+                                    IntVariable     -> performVariableAssignment evalRealExpr (IntElement . floor) va
+                                    DoubleVariable  -> performVariableAssignment evalRealExpr DoubleElement va 
+                                    StringVariable  -> sPrintLn $ "[WIP]"
+
+
 -- | Display the elements of a page one line at a time
 displayPageContents :: [PageElement] -> StateT VariableMap IO ()
 displayPageContents [] = return ()
 displayPageContents (x:xs) = do
     case x of
-        Left line -> displayTextLine line
-        Right prompt -> displayVariablePrompt prompt
+        PELine line     -> displayTextLine line
+        PEPrompt prompt -> displayVariablePrompt prompt
+        PEAssign a      -> executeVariableAssignment a
     displayPageContents xs
 
 -- | Helper function for printing a list of choices

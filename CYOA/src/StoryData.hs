@@ -51,14 +51,19 @@ data Consequence = EndPoint Ending
 -- Lines and Variables
 ------------------------
 
-type PageElement = Either Line VariablePrompt
+data PageElement = PELine Line | PEPrompt VariablePrompt | PEAssign VariableAssignment
 
 newtype Line = Line {lineText :: String} deriving (Eq, Show)
 
 pLine :: String -> PageElement
-pLine = Left . Line
+pLine = PELine . Line
 
 data VariablePrompt = VariablePrompt { varPromptLine :: Line, varPromptVariable :: String, varPromptType :: VariableType }
 
 pVarPrompt :: String -> String -> VariableType -> PageElement
-pVarPrompt dispLine varName varType = Right $ VariablePrompt (Line dispLine) varName varType
+pVarPrompt dispLine varName varType = PEPrompt $ VariablePrompt (Line dispLine) varName varType
+
+data VariableAssignment = VariableAssignment { varAssignVariable :: String, varAssignValueExpr :: String, varAssignType :: VariableType }
+
+pVarAssign :: String -> String -> VariableType -> PageElement
+pVarAssign varName varExpr varType = PEAssign $ VariableAssignment varName varExpr varType

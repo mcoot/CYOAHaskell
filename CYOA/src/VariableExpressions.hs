@@ -1,6 +1,7 @@
-module VariableExpressions (evalRealExpr, evalPredExpr, evalRealExprUnsafe, evalPredExprUnsafe) where
+module VariableExpressions (evalRealExpr, evalStringExpr, evalPredExpr, evalRealExprUnsafe, evalStringExprUnsafe, evalPredExprUnsafe) where
 
 import Data.Fixed (mod')
+import Data.Char
 
 import Text.Parsec
 import Text.Parsec.String (Parser)
@@ -22,6 +23,18 @@ evalRealExprUnsafe m str = case parseRealExprMaybe str of
                                                 Just realRes -> realRes
                                                 Nothing      -> error "Failed to evaluate real expression"
                             Nothing       -> error "Failed to parse real expression"
+
+evalStringExpr :: VariableMap -> String -> Maybe String
+evalStringExpr m str = do
+    parseRes <- parseStringExprMaybe str
+    evalStringExprAST m parseRes
+
+evalStringExprUnsafe :: VariableMap -> String -> String
+evalStringExprUnsafe m str = case parseStringExprMaybe str of
+                            Just parseRes -> case evalStringExprAST m parseRes of
+                                                Just strRes -> strRes
+                                                Nothing      -> error "Failed to evaluate string expression"
+                            Nothing       -> error "Failed to parse string expression"
 
 evalPredExpr :: VariableMap -> String -> Maybe Bool
 evalPredExpr m str = do
@@ -59,8 +72,8 @@ data PredBinaryOp = PredAnd | PredOr | PredXor | PredImplies | PredIff
 exprDef = emptyDef { identStart = letter
                    , identLetter = alphaNum
                    , reservedNames = ["true", "false"]
-                   , opStart = oneOf "+-*/%^!|&<=>"
-                   , opLetter = oneOf "+-*/%^!|&<=>"
+                   , opStart = oneOf "+-*/%^!|&<=>_"
+                   , opLetter = oneOf "+-*/%^!|&<=>_"
                    }
 
 lexer :: TokenParser ()
@@ -228,3 +241,86 @@ evalRealExprAST m (BinaryExpr op lEx rEx) = do
         RealModulo      -> return $ mod' lVal rVal
         RealExponent    -> return $ lVal ** rVal
 
+------------------------
+-- String expressions
+------------------------
+
+data StringExpr = StringConst String
+                | StringVarConst String
+                | SUnaryExpr StringUnaryOp StringExpr
+                | SBinaryExpr StringBinaryOp StringExpr StringExpr
+    deriving (Show)
+
+data StringUnaryOp = StringUpperCase | StringLowerCase | StringRot13 deriving (Show)
+
+data StringBinaryOp = StringConcat deriving (Show)
+
+-- StringExpr Parsers
+
+parseEscapeStringConstChar :: Parser String
+parseEscapeStringConstChar = do
+    d <- char '\\'
+    c <- oneOf "\\\""
+    return [d, c]
+
+parseNonEscapeStringConstChar :: Parser Char
+parseNonEscapeStringConstChar = noneOf "\\\""
+
+parseStringConstChar :: Parser String
+parseStringConstChar = fmap return parseNonEscapeStringConstChar <|> parseEscapeStringConstChar
+
+parseStringConst :: Parser StringExpr
+parseStringConst = do
+    literal <- stringLiteral lexer
+    return $ StringConst literal
+
+parseStringVar :: Parser StringExpr
+parseStringVar = do
+    ident <- identifier lexer
+    return $ StringVarConst ident
+
+parseStringTerm :: Parser StringExpr
+parseStringTerm =  parens lexer parseStringExprOps
+               <|> parseStringConst
+               <|> parseStringVar
+
+parseStringExprOps :: Parser StringExpr
+parseStringExprOps = (flip buildExpressionParser) parseStringTerm [
+        [ Prefix (reservedOp lexer "^" >> return (SUnaryExpr StringUpperCase))
+        , Prefix (reservedOp lexer "_" >> return (SUnaryExpr StringLowerCase))
+        , Prefix (reservedOp lexer "%" >> return (SUnaryExpr StringRot13))],
+        [ Infix (reservedOp lexer "++" >> return (SBinaryExpr StringConcat)) AssocLeft]
+    ]
+
+parseStringExpr :: Parser StringExpr
+parseStringExpr = do
+    whiteSpace lexer
+    e <- parseStringExprOps
+    eof
+    return e
+
+parseStringExprMaybe :: String -> Maybe StringExpr
+parseStringExprMaybe str = case parse parseStringExpr "" str of
+                            Left _      -> Nothing
+                            Right expr  -> Just expr
+
+-- Evaluation
+
+evalStringExprAST :: VariableMap -> StringExpr -> Maybe String
+evalStringExprAST _ (StringConst s) = return $ s
+evalStringExprAST m (StringVarConst varName) = case getVariableMaybe varName m of
+    Just (StringElement s)  -> evalStringExprAST m (StringConst s) 
+    Just _                  -> Nothing
+    Nothing                 -> Nothing
+
+evalStringExprAST m (SUnaryExpr op ex) = do
+    exres <- evalStringExprAST m ex
+    case op of
+        StringUpperCase -> return $ fmap toUpper exres
+        StringLowerCase -> return $ fmap toLower exres
+        StringRot13     -> return $ caesarCipher 13 exres
+
+evalStringExprAST m (SBinaryExpr StringConcat lEx rEx) = do
+    lVal <- evalStringExprAST m lEx
+    rVal <- evalStringExprAST m rEx
+    return $ lVal ++ rVal

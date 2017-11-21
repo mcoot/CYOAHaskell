@@ -79,7 +79,7 @@ executeVariableAssignment :: VariableAssignment -> StateT VariableMap IO ()
 executeVariableAssignment va = case varAssignType va of
                                     IntVariable     -> performVariableAssignment evalRealExpr (IntElement . floor) va
                                     DoubleVariable  -> performVariableAssignment evalRealExpr DoubleElement va 
-                                    StringVariable  -> sPrintLn $ "[WIP]"
+                                    StringVariable  -> performVariableAssignment evalStringExpr StringElement va
 
 
 -- | Display the elements of a page one line at a time

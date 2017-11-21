@@ -10,7 +10,8 @@ branchTestStory = Story {
         pageContents = [
             pLine "Hey there qt`314/100`, just testing atm",
             pVarAssign "realFiveDivTwo" "5/2" DoubleVariable,
-            pVarPrompt "Quick Q, what's five divided by two?" "fiveDivTwo" DoubleVariable,
+            pVarAssign "testStringVar" "\"potatoes\"" StringVariable,
+            pVarPrompt "I like $testStringVar. Also, Quick Q, what's five divided by two?" "fiveDivTwo" DoubleVariable,
             pLine "Ok, thanks",
             pLine "No dramas, just need to check if you were telling the truth or whether you're a filthy liar (hint: ::? fiveDivTwo == realFiveDivTwo ? ur sweet : get ready `1+1` b r`9/3`kt bro ?::)",
             pLine "Checking now... "

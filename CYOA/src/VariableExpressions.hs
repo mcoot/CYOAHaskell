@@ -53,12 +53,16 @@ evalPredExprUnsafe m str = case parsePredExprMaybe str of
 ------------------------
 
 data PredExpr = BoolConst Bool
-              | RBinaryExpr RealPredBinaryOp RealExpr RealExpr
+              | PRBinaryExpr RealPredBinaryOp RealExpr RealExpr
+              | PSBinaryExpr StringPredBinaryOp StringExpr StringExpr
               | PUnaryExpr PredUnaryOp PredExpr
               | PBinaryExpr PredBinaryOp PredExpr PredExpr
     deriving (Show)
 
 data RealPredBinaryOp = RealLessThan | RealLessThanEq | RealEquals | RealNotEquals | RealGreaterThanEq | RealGreaterThan
+    deriving (Show)
+
+data StringPredBinaryOp = StringEquals | StringNotEquals
     deriving (Show)
 
 data PredUnaryOp = PredNot
@@ -84,6 +88,7 @@ lexer = makeTokenParser exprDef
 parsePredTerm :: Parser PredExpr
 parsePredTerm =  parens lexer parsePredExprOps
               <|> parseRealPredTerm
+              <|> parseStringPredTerm
               <|> (reserved lexer "true" >> return (BoolConst True))
               <|> (reserved lexer "false" >> return (BoolConst False))
 
@@ -92,7 +97,7 @@ parseRealPredTerm = do
     lVal <- parseRealExprOps
     op <- parseRealPredOperator
     rVal <- parseRealExprOps
-    return $ RBinaryExpr op lVal rVal
+    return $ PRBinaryExpr op lVal rVal
 
 parseRealPredOperator :: Parser RealPredBinaryOp
 parseRealPredOperator =  (reservedOp lexer "<=" >> return RealLessThanEq) 
@@ -101,6 +106,17 @@ parseRealPredOperator =  (reservedOp lexer "<=" >> return RealLessThanEq)
                      <|> (reservedOp lexer "!=" >> return RealNotEquals)
                      <|> (reservedOp lexer ">=" >> return RealGreaterThanEq)
                      <|> (reservedOp lexer ">" >> return RealGreaterThan)
+
+parseStringPredTerm :: Parser PredExpr
+parseStringPredTerm = do
+    lVal <- parseStringExprOps
+    op <- parseStringPredOperator
+    rVal <- parseStringExprOps
+    return $ PSBinaryExpr op lVal rVal
+
+parseStringPredOperator :: Parser StringPredBinaryOp
+parseStringPredOperator =  (reservedOp lexer "==" >> return StringEquals) 
+                        <|> (reservedOp lexer "!=" >> return StringNotEquals)
 
 parsePredExprOps :: Parser PredExpr
 parsePredExprOps = (flip buildExpressionParser) parsePredTerm [
@@ -129,16 +145,23 @@ parsePredExprMaybe str = case parse parsePredExpr "" str of
 evalPredExprAST :: VariableMap -> PredExpr -> Maybe Bool
 evalPredExprAST _ (BoolConst b) = return b
 
-evalPredExprAST m (RBinaryExpr op lEx rEx) = do
+evalPredExprAST m (PRBinaryExpr op lEx rEx) = do
     lVal <- evalRealExprAST m lEx
     rVal <- evalRealExprAST m rEx
-    case op of
-        RealLessThan -> return $ lVal < rVal
-        RealLessThanEq -> return $ lVal <= rVal
-        RealEquals -> return $ lVal == rVal
-        RealNotEquals -> return $ lVal /= rVal
-        RealGreaterThanEq -> return $ lVal >= rVal
-        RealGreaterThan -> return $ lVal > rVal
+    return $ case op of
+                RealLessThan      -> lVal < rVal
+                RealLessThanEq    -> lVal <= rVal
+                RealEquals        -> lVal == rVal
+                RealNotEquals     -> lVal /= rVal
+                RealGreaterThanEq -> lVal >= rVal
+                RealGreaterThan   -> lVal > rVal
+
+evalPredExprAST m (PSBinaryExpr op lEx rEx) = do
+    lVal <- evalStringExprAST m lEx
+    rVal <- evalStringExprAST m rEx
+    return $ case op of
+                StringEquals    -> lVal == rVal
+                StringNotEquals -> lVal /= rVal
 
 evalPredExprAST m (PUnaryExpr PredNot ex) = do
     exres <- evalPredExprAST m ex

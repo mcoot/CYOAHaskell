@@ -1,5 +1,5 @@
-module VariableData (VariableType(IntVariable, StringVariable, DoubleVariable), 
-                     VariableElement(IntElement, StringElement, DoubleElement), 
+module VariableData (VariableType(IntVariable, StringVariable, DoubleVariable, BoolVariable), 
+                     VariableElement(IntElement, StringElement, DoubleElement, BoolElement), 
                      VariableMap,
                      getVariable, getVariableMaybe,
                      putVariable,
@@ -44,11 +44,13 @@ mapTest = do
 data VariableType = IntVariable
                   | StringVariable
                   | DoubleVariable
+                  | BoolVariable
     deriving (Eq, Show)
 
 -- | Data type for the value of the variable map, which may be an integer, string or floating point
 data VariableElement = IntElement Integer
                      | StringElement String
                      | DoubleElement Double
+                     | BoolElement Bool
     deriving (Eq, Show)
     

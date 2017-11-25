@@ -11,16 +11,17 @@ branchTestStory = Story {
             pLine "Hey there qt`314/100`, just testing atm",
             pVarAssign "realFiveDivTwo" "5/2" DoubleVariable,
             pVarAssign "testStringVar" "\"potatoes\"" StringVariable,
-            pVarPrompt "I like $testStringVar. Also, Quick Q, what's five divided by two?" "fiveDivTwo" DoubleVariable,
-            pLine "Ok, thanks",
-            pLine "No dramas, just need to check if you were telling the truth or whether you're a filthy liar (hint: ::? fiveDivTwo == realFiveDivTwo ? ur sweet : get ready `1+1` b r`9/3`kt bro ?::)",
+            pVarAssign "testBoolVar" "true || false" BoolVariable,
+            pVarPrompt "I like $testStringVar, it's $testBoolVar. Also, Quick Q, what's five divided by two?" "fiveDivTwo" DoubleVariable,
+            pVarPrompt "Ok, thanks. Also, is the sky blue?" "isSkyBlue" BoolVariable,
+            pLine "No dramas, just need to check if you were telling the truth or whether you're a filthy liar (hint: ::? isSkyBlue && (fiveDivTwo == realFiveDivTwo) ? ur sweet : get ready `1+1` b r`9/3`kt bro ?::)",
             pLine "Checking now... "
         ],
         pageResult = Conditional {
             condFalseLine = Line "Ok yep, five divided by two is $fiveDivTwo apparently, that's normal",
             condTrueLine = Line "Ah right, thanks for confirming. I forgot how `(4/4) * 2` maths apparently",
             condBranch = Branch {
-                branchPred = "fiveDivTwo == realFiveDivTwo",
+                branchPred = "fiveDivTwo == realFiveDivTwo && isSkyBlue",
                 branchFalsePage = Page {
                     pageContents = [
                         pLine "Oh who am I kidding this is totally not normal at all. CLEARLY five divided by two is ${realFiveDivTwo}.",

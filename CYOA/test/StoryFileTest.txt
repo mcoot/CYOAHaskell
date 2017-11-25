@@ -1,0 +1,42 @@
+[TITLE Story File Test]
+
+[PAGE p_start]
+[PROMPT playerName String] What is your name?
+You are $playerName, and you are a fish detective.
+That is, you are a detective who investigates the disappearance of fish, not a fish who is a detective.
+It's a dark and stormy night in an unnamed but suitably noir-ish city.
+As you loiter on the street, your face silhoutted by the dim light from a street lamp, a man in a trench coat approaches.
+The man seems shady, but so does anyone out on the street at night in a city ripped from a detective novel.
+[ASSIGN] didRunFromStranger = false
+[CHOICE p_talktoman] Say hello to the stranger
+[CHOICE p_runfromman] Try to run away from the stranger
+
+[PAGE p_runfromman]
+[ASSIGN didRunFromStranger Bool] true
+The stranger seems a little *too* shady, so you, as calmly as possible, leg it.
+You abruptly begin walking. You quickly break into a run, and then into a sprint.
+The man speeds up to catch you, seemingly confirming your fears.
+He's struggling to keep up, and you turn a corner in the hopes of losing him.
+Unfortunately, small step right around the corner trips you, and you hit the grimy concrete palms first.
+As you try to get up, your assailant rounds the corner.
+He shouts at you to stop. At this point, you don't really have a choice.
+[CHOICE p_giveuprunning] Give up
+[CHOICE p_continuerunning] Attempt to escape
+
+[PAGE p_continuerunning]
+You scramble to your feet and attempt to get away.
+As you get up, you lose your sense of balance, which sends you off course and onto the road, right in the path of an oncoming car.
+You see the car, but there is no time to react, and it smashes into you, killing you instantly.
+[ENDING] You died.
+
+[PAGE p_giveuprunning]
+You collapse to the ground, panting. It's over. You're at the stranger's mercy.
+The man offers his hand to you and helps you up. Most importantly, he does not attempt to stab or otherwise murder you.
+Once you're on your feet, you dust yourself off; finally, you are face to face with him.
+[CONTINUE p_talktoman]
+
+[PAGE p_talktoman]
+$playerName: So, uh... hi.
+STRANGER: ::? didRunFromStranger ? Looks like you've taken a bit of a tumble... : Hello. ?::
+STRANGER: Sorry if I scared you. This situation is a bit fluid right now, and I can't take any chances.
+[ENDING] Lol the end

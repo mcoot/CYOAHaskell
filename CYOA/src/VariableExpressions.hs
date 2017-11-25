@@ -53,6 +53,7 @@ evalPredExprUnsafe m str = case parsePredExprMaybe str of
 ------------------------
 
 data PredExpr = BoolConst Bool
+              | BoolVarConst String
               | PRBinaryExpr RealPredBinaryOp RealExpr RealExpr
               | PSBinaryExpr StringPredBinaryOp StringExpr StringExpr
               | PUnaryExpr PredUnaryOp PredExpr
@@ -85,10 +86,16 @@ lexer = makeTokenParser exprDef
 
 -- Parsers
 
+parseBoolVar :: Parser PredExpr
+parseBoolVar = do
+    ident <- identifier lexer
+    return $ BoolVarConst ident
+
 parsePredTerm :: Parser PredExpr
 parsePredTerm =  parens lexer parsePredExprOps
-              <|> parseRealPredTerm
-              <|> parseStringPredTerm
+              <|> try parseRealPredTerm
+              <|> try parseStringPredTerm
+              <|> parseBoolVar
               <|> (reserved lexer "true" >> return (BoolConst True))
               <|> (reserved lexer "false" >> return (BoolConst False))
 
@@ -144,6 +151,10 @@ parsePredExprMaybe str = case parse parsePredExpr "" str of
 
 evalPredExprAST :: VariableMap -> PredExpr -> Maybe Bool
 evalPredExprAST _ (BoolConst b) = return b
+evalPredExprAST m (BoolVarConst varName) = case getVariableMaybe varName m of
+                                          Just (BoolElement b)  -> return b
+                                          Just _                -> Nothing
+                                          Nothing               -> Nothing
 
 evalPredExprAST m (PRBinaryExpr op lEx rEx) = do
     lVal <- evalRealExprAST m lEx
@@ -245,7 +256,8 @@ evalRealExprAST _ (DoubleConst f) = return f
 evalRealExprAST m (VarConst varName) = case getVariableMaybe varName m of
                                         Just (IntElement i)     -> evalRealExprAST m (IntConst i)
                                         Just (DoubleElement f)  -> evalRealExprAST m (DoubleConst f)
-                                        Just (StringElement _)  -> Nothing 
+                                        Just (StringElement _)  -> Nothing
+                                        Just (BoolElement _)    -> Nothing
                                         Nothing -> Nothing
 
 evalRealExprAST m (UnaryExpr RealPositive ex) = evalRealExprAST m ex

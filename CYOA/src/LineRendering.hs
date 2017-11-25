@@ -24,6 +24,7 @@ renderVariableElement :: VariableElement -> String
 renderVariableElement (IntElement val) = show val
 renderVariableElement (StringElement val) = val
 renderVariableElement (DoubleElement val) = show val
+renderVariableElement (BoolElement val) = show val
 
 getVarsTextVariablesBracketed :: String -> [String]
 getVarsTextVariablesBracketed str = map (flip (!!) 1) (getMatches str "\\${([A-Za-z0-9]+)}")

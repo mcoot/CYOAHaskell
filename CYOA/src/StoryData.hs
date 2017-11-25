@@ -41,6 +41,7 @@ data Consequence = EndPoint Ending
                             choiceQuestion :: Line, -- ^ The question presented
                             choiceOptions :: [Choice] -- ^ The list of possible choices
                            }
+                 | Continuation Page
                  | Conditional {
                                 condBranch :: Branch,
                                 condTrueLine :: Line,

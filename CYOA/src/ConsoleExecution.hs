@@ -3,6 +3,8 @@ module ConsoleExecution (playStory) where
 import Control.Monad.State
 import System.IO
 import qualified Text.Read (readMaybe)
+import Data.Char
+import Data.String.Utils
 
 import VariableData
 import VariableExpressions
@@ -57,6 +59,12 @@ promptForVariable varType varName = do
         DoubleVariable  -> case Text.Read.readMaybe response of
                                 Just x   -> putVariable varName (DoubleElement x)
                                 Nothing  -> promptForVariable varType varName
+        BoolVariable    -> case strip $ fmap toLower response  of
+                                "true"   -> putVariable varName (BoolElement True)
+                                "yes"    -> putVariable varName (BoolElement True)
+                                "false"  -> putVariable varName (BoolElement False)
+                                "no"     -> putVariable varName (BoolElement False)
+                                _        -> promptForVariable varType varName
 
 displayVariablePrompt :: VariablePrompt -> StateT VariableMap IO ()
 displayVariablePrompt (VariablePrompt {varPromptLine = line, 
@@ -80,6 +88,7 @@ executeVariableAssignment va = case varAssignType va of
                                     IntVariable     -> performVariableAssignment evalRealExpr (IntElement . floor) va
                                     DoubleVariable  -> performVariableAssignment evalRealExpr DoubleElement va 
                                     StringVariable  -> performVariableAssignment evalStringExpr StringElement va
+                                    BoolVariable    -> performVariableAssignment evalPredExpr BoolElement va
 
 
 -- | Display the elements of a page one line at a time
@@ -146,13 +155,14 @@ runPage page = do
     displayPageContents $ pageContents page
     case pageResult page of
         EndPoint ending -> do
-            return $ Right ending
+                    return $ Right ending
         Choices {choiceQuestion = question, choiceOptions = options} -> do
-            userChoice <- presentChoice question options
-            return $ Left $ nextPage userChoice
+                    userChoice <- presentChoice question options
+                    return $ Left $ nextPage userChoice
+        Continuation p -> return $ Left $ p
         Conditional {condBranch = br, condTrueLine = tl, condFalseLine = fl} -> do
-            condPage <- presentBranch br tl fl
-            return $ Left $ condPage
+                    condPage <- presentBranch br tl fl
+                    return $ Left $ condPage
 
 -- | Run a page, and then the follow on page, until eventually an ending is reached
 --   i.e. traverse the story tree with user input guiding the choices

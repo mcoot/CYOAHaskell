@@ -87,9 +87,7 @@ lexer = makeTokenParser exprDef
 -- Parsers
 
 parseBoolVar :: Parser PredExpr
-parseBoolVar = do
-    ident <- identifier lexer
-    return $ BoolVarConst ident
+parseBoolVar = BoolVarConst <$> identifier lexer
 
 parsePredTerm :: Parser PredExpr
 parsePredTerm =  parens lexer parsePredExprOps
@@ -215,9 +213,7 @@ parseNumber = do
         Right flt -> return $ DoubleConst flt
 
 parseVar :: Parser RealExpr
-parseVar = do
-    ident <- identifier lexer
-    return $ VarConst ident
+parseVar = VarConst <$> identifier lexer
 
 parseRealTerm :: Parser RealExpr
 parseRealTerm =  parens lexer parseRealExprOps
@@ -310,9 +306,7 @@ parseStringConst = do
     return $ StringConst literal
 
 parseStringVar :: Parser StringExpr
-parseStringVar = do
-    ident <- identifier lexer
-    return $ StringVarConst ident
+parseStringVar = StringVarConst <$> identifier lexer
 
 parseStringTerm :: Parser StringExpr
 parseStringTerm =  parens lexer parseStringExprOps

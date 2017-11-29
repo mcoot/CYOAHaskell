@@ -23,6 +23,7 @@ library
                      , split
                      , regex-pcre-builtin
                      , MissingH
+                     , directory
   default-language:    Haskell2010
 
 executable CYOA-exe
